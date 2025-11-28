@@ -1,45 +1,124 @@
-Welcome to your new TanStack app! 
+# Fiscal - Personal Finance Manager
+
+A brutalist-styled personal finance management application built with TanStack Start, tRPC, Drizzle ORM, and Better Auth.
+
+## Features
+
+- **Authentication**: Email/password authentication with Better Auth
+- **Protected Routes**: User-scoped data access with tRPC
+- **Dashboard**: Overview of accounts, transactions, and balances
+- **Brutalist Design**: Bold borders, uppercase text, Departure Mono font
+- **System Categories**: Pre-seeded income and expense categories
+
+## Tech Stack
+
+- **Frontend**: React 19, TanStack Router, TanStack Query
+- **Backend**: TanStack Start, tRPC
+- **Database**: SQLite with Drizzle ORM
+- **Auth**: Better Auth
+- **Styling**: Tailwind CSS 4
 
 # Getting Started
 
-To run this application:
+## Installation
 
 ```bash
 pnpm install
-pnpm start
 ```
 
-# Building For Production
+## Database Setup
 
-To build this application for production:
+1. Initialize the database:
+```bash
+pnpm db:push
+```
+
+2. Seed system categories:
+```bash
+pnpm db:seed
+```
+
+## Running the App
+
+```bash
+pnpm dev
+```
+
+The app will be available at http://localhost:3000
+
+## First Time Setup
+
+1. Visit http://localhost:3000
+2. You'll be redirected to the login page
+3. Click "Sign Up" to create an account
+4. Enter your email and password
+5. You'll be redirected to the dashboard
+
+# Building For Production
 
 ```bash
 pnpm build
 ```
 
+## Database Management
+
+- **Generate migration**: `pnpm db:generate`
+- **Push schema**: `pnpm db:push`
+- **Open Drizzle Studio**: `pnpm db:studio`
+- **Seed database**: `pnpm db:seed`
+
 ## Testing
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+This project uses [Vitest](https://vitest.dev/) for testing.
 
 ```bash
 pnpm test
 ```
 
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-
 ## Linting & Formatting
 
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
-
+This project uses [Biome](https://biomejs.dev/) for linting and formatting.
 
 ```bash
 pnpm lint
 pnpm format
 pnpm check
 ```
+
+## Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── FiscalHeader.tsx   # App header with logout
+│   └── ProtectedRoute.tsx # Auth wrapper
+├── db/
+│   ├── schema/          # Drizzle schema definitions
+│   ├── seed.ts          # Database seed script
+│   └── index.ts         # Database connection
+├── integrations/
+│   └── trpc/            # tRPC setup
+│       ├── router.ts      # Main router
+│       ├── routers/       # Individual routers
+│       └── react.ts       # React tRPC client
+├── lib/
+│   ├── auth.ts          # Better Auth config
+│   └── auth-client.ts   # Auth client utilities
+└── routes/              # File-based routing
+    ├── __root.tsx         # Root layout
+    ├── index.tsx          # Dashboard
+    ├── login.tsx          # Login/signup page
+    └── demo/              # Demo routes (can be deleted)
+```
+
+# Learn More
+
+- [TanStack Start](https://tanstack.com/start)
+- [TanStack Router](https://tanstack.com/router)
+- [TanStack Query](https://tanstack.com/query)
+- [tRPC](https://trpc.io)
+- [Drizzle ORM](https://orm.drizzle.team)
+- [Better Auth](https://www.better-auth.com)
 
 
 ## Shadcn
