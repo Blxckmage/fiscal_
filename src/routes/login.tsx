@@ -58,7 +58,7 @@ function LoginPage() {
 	});
 
 	return (
-		<div className="min-h-screen flex items-center justify-center p-4 bg-white dark:bg-black">
+		<div className="min-h-screen flex items-center justify-center p-4">
 			<div className="w-full max-w-md border-4 border-black dark:border-white bg-white dark:bg-black p-8">
 				<h1 className="text-4xl font-bold mb-2 uppercase">
 					{isSignUp ? "Sign Up" : "Login"}

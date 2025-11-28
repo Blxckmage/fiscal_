@@ -30,6 +30,27 @@ export default function FiscalHeader() {
 					>
 						Dashboard
 					</Link>
+					<Link
+						to="/accounts"
+						className="font-bold uppercase hover:underline"
+						activeProps={{ className: "font-bold uppercase underline" }}
+					>
+						Accounts
+					</Link>
+					<Link
+						to="/transactions"
+						className="font-bold uppercase hover:underline"
+						activeProps={{ className: "font-bold uppercase underline" }}
+					>
+						Transactions
+					</Link>
+					<Link
+						to="/transactions/new"
+						className="font-bold uppercase hover:underline"
+						activeProps={{ className: "font-bold uppercase underline" }}
+					>
+						Add Transaction
+					</Link>
 
 					<div className="flex items-center gap-4 ml-4 pl-4 border-l-2 border-black dark:border-white">
 						<ThemeToggle />
