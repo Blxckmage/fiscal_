@@ -12,3 +12,12 @@ count.txt
 .vinxi
 todos.json
 .ai
+
+# Database
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Drizzle
+drizzle/
