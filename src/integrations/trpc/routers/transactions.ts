@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 import type { TRPCRouterRecord } from "@trpc/server";
+import { TRPCError } from "@trpc/server";
 import { db } from "@/db";
 import { transactions, accounts } from "@/db/schema";
-import { publicProcedure } from "../init";
+import { protectedProcedure } from "../init";
 
 export const transactionsRouter = {
-	getAll: publicProcedure
+	getAll: protectedProcedure
 		.input(
 			z.object({
 				accountId: z.string().optional(),
@@ -18,8 +19,8 @@ export const transactionsRouter = {
 				offset: z.number().default(0),
 			}),
 		)
-		.query(async ({ input }) => {
-			const conditions = [];
+		.query(async ({ input, ctx }) => {
+			const conditions = [eq(transactions.userId, ctx.userId)];
 
 			if (input.accountId) {
 				conditions.push(eq(transactions.accountId, input.accountId));
@@ -40,23 +41,28 @@ export const transactionsRouter = {
 			return await db
 				.select()
 				.from(transactions)
-				.where(conditions.length > 0 ? and(...conditions) : undefined)
+				.where(and(...conditions))
 				.orderBy(desc(transactions.date))
 				.limit(input.limit)
 				.offset(input.offset);
 		}),
 
-	getById: publicProcedure
+	getById: protectedProcedure
 		.input(z.object({ id: z.string() }))
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const [transaction] = await db
 				.select()
 				.from(transactions)
-				.where(eq(transactions.id, input.id));
+				.where(
+					and(
+						eq(transactions.id, input.id),
+						eq(transactions.userId, ctx.userId),
+					),
+				);
 			return transaction;
 		}),
 
-	create: publicProcedure
+	create: protectedProcedure
 		.input(
 			z.object({
 				accountId: z.string(),
@@ -68,43 +74,59 @@ export const transactionsRouter = {
 				notes: z.string().optional(),
 			}),
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
+			// Verify account belongs to user
+			const [account] = await db
+				.select()
+				.from(accounts)
+				.where(
+					and(
+						eq(accounts.id, input.accountId),
+						eq(accounts.userId, ctx.userId),
+					),
+				);
+
+			if (!account) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Account not found",
+				});
+			}
+
 			// Create transaction
 			const [transaction] = await db
 				.insert(transactions)
 				.values({
-					userId: "temp-user-id", // TODO: Replace with actual user ID
+					userId: ctx.userId,
 					...input,
 				})
 				.returning();
 
 			// Update account balance
-			const [account] = await db
-				.select()
-				.from(accounts)
-				.where(eq(accounts.id, input.accountId));
+			const currentBalance = Number.parseFloat(account.balance);
+			const amount = Number.parseFloat(input.amount);
+			const newBalance =
+				input.type === "income"
+					? currentBalance + amount
+					: currentBalance - amount;
 
-			if (account) {
-				const currentBalance = Number.parseFloat(account.balance);
-				const amount = Number.parseFloat(input.amount);
-				const newBalance =
-					input.type === "income"
-						? currentBalance + amount
-						: currentBalance - amount;
-
-				await db
-					.update(accounts)
-					.set({
-						balance: newBalance.toString(),
-						updatedAt: new Date().toISOString(),
-					})
-					.where(eq(accounts.id, input.accountId));
-			}
+			await db
+				.update(accounts)
+				.set({
+					balance: newBalance.toString(),
+					updatedAt: new Date().toISOString(),
+				})
+				.where(
+					and(
+						eq(accounts.id, input.accountId),
+						eq(accounts.userId, ctx.userId),
+					),
+				);
 
 			return transaction;
 		}),
 
-	update: publicProcedure
+	update: protectedProcedure
 		.input(
 			z.object({
 				id: z.string(),
@@ -116,24 +138,34 @@ export const transactionsRouter = {
 				notes: z.string().optional(),
 			}),
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			const { id, ...data } = input;
 
 			// Get old transaction to recalculate balance
 			const [oldTransaction] = await db
 				.select()
 				.from(transactions)
-				.where(eq(transactions.id, id));
+				.where(
+					and(eq(transactions.id, id), eq(transactions.userId, ctx.userId)),
+				);
 
 			if (!oldTransaction) {
-				throw new Error("Transaction not found");
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Transaction not found",
+				});
 			}
 
 			// Revert old balance change
 			const [oldAccount] = await db
 				.select()
 				.from(accounts)
-				.where(eq(accounts.id, oldTransaction.accountId));
+				.where(
+					and(
+						eq(accounts.id, oldTransaction.accountId),
+						eq(accounts.userId, ctx.userId),
+					),
+				);
 
 			if (oldAccount) {
 				const currentBalance = Number.parseFloat(oldAccount.balance);
@@ -146,7 +178,12 @@ export const transactionsRouter = {
 				await db
 					.update(accounts)
 					.set({ balance: revertedBalance.toString() })
-					.where(eq(accounts.id, oldTransaction.accountId));
+					.where(
+						and(
+							eq(accounts.id, oldTransaction.accountId),
+							eq(accounts.userId, ctx.userId),
+						),
+					);
 			}
 
 			// Update transaction
@@ -156,7 +193,9 @@ export const transactionsRouter = {
 					...data,
 					updatedAt: new Date().toISOString(),
 				})
-				.where(eq(transactions.id, id))
+				.where(
+					and(eq(transactions.id, id), eq(transactions.userId, ctx.userId)),
+				)
 				.returning();
 
 			// Apply new balance change
@@ -164,7 +203,9 @@ export const transactionsRouter = {
 			const [newAccount] = await db
 				.select()
 				.from(accounts)
-				.where(eq(accounts.id, newAccountId));
+				.where(
+					and(eq(accounts.id, newAccountId), eq(accounts.userId, ctx.userId)),
+				);
 
 			if (newAccount) {
 				const currentBalance = Number.parseFloat(newAccount.balance);
@@ -182,30 +223,45 @@ export const transactionsRouter = {
 						balance: updatedBalance.toString(),
 						updatedAt: new Date().toISOString(),
 					})
-					.where(eq(accounts.id, newAccountId));
+					.where(
+						and(eq(accounts.id, newAccountId), eq(accounts.userId, ctx.userId)),
+					);
 			}
 
 			return transaction;
 		}),
 
-	delete: publicProcedure
+	delete: protectedProcedure
 		.input(z.object({ id: z.string() }))
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			// Get transaction to adjust balance
 			const [transaction] = await db
 				.select()
 				.from(transactions)
-				.where(eq(transactions.id, input.id));
+				.where(
+					and(
+						eq(transactions.id, input.id),
+						eq(transactions.userId, ctx.userId),
+					),
+				);
 
 			if (!transaction) {
-				throw new Error("Transaction not found");
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Transaction not found",
+				});
 			}
 
 			// Adjust account balance
 			const [account] = await db
 				.select()
 				.from(accounts)
-				.where(eq(accounts.id, transaction.accountId));
+				.where(
+					and(
+						eq(accounts.id, transaction.accountId),
+						eq(accounts.userId, ctx.userId),
+					),
+				);
 
 			if (account) {
 				const currentBalance = Number.parseFloat(account.balance);
@@ -221,25 +277,38 @@ export const transactionsRouter = {
 						balance: newBalance.toString(),
 						updatedAt: new Date().toISOString(),
 					})
-					.where(eq(accounts.id, transaction.accountId));
+					.where(
+						and(
+							eq(accounts.id, transaction.accountId),
+							eq(accounts.userId, ctx.userId),
+						),
+					);
 			}
 
 			// Delete transaction
-			await db.delete(transactions).where(eq(transactions.id, input.id));
+			await db
+				.delete(transactions)
+				.where(
+					and(
+						eq(transactions.id, input.id),
+						eq(transactions.userId, ctx.userId),
+					),
+				);
 			return { success: true };
 		}),
 
-	getRecent: publicProcedure
+	getRecent: protectedProcedure
 		.input(z.object({ limit: z.number().default(10) }))
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			return await db
 				.select()
 				.from(transactions)
+				.where(eq(transactions.userId, ctx.userId))
 				.orderBy(desc(transactions.date))
 				.limit(input.limit);
 		}),
 
-	getByDateRange: publicProcedure
+	getByDateRange: protectedProcedure
 		.input(
 			z.object({
 				startDate: z.string(),
@@ -248,8 +317,9 @@ export const transactionsRouter = {
 				categoryId: z.string().optional(),
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const conditions = [
+				eq(transactions.userId, ctx.userId),
 				gte(transactions.date, input.startDate),
 				lte(transactions.date, input.endDate),
 			];

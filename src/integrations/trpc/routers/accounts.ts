@@ -1,26 +1,29 @@
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { db } from "@/db";
 import { accounts } from "@/db/schema";
-import { publicProcedure } from "../init";
+import { protectedProcedure } from "../init";
 
 export const accountsRouter = {
-	getAll: publicProcedure.query(async () => {
-		return await db.select().from(accounts);
+	getAll: protectedProcedure.query(async ({ ctx }) => {
+		return await db
+			.select()
+			.from(accounts)
+			.where(eq(accounts.userId, ctx.userId));
 	}),
 
-	getById: publicProcedure
+	getById: protectedProcedure
 		.input(z.object({ id: z.string() }))
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const [account] = await db
 				.select()
 				.from(accounts)
-				.where(eq(accounts.id, input.id));
+				.where(and(eq(accounts.id, input.id), eq(accounts.userId, ctx.userId)));
 			return account;
 		}),
 
-	create: publicProcedure
+	create: protectedProcedure
 		.input(
 			z.object({
 				name: z.string(),
@@ -31,19 +34,18 @@ export const accountsRouter = {
 				icon: z.string().optional(),
 			}),
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			const [account] = await db
 				.insert(accounts)
 				.values({
-					// userId will be added when auth is implemented
-					userId: "temp-user-id", // TODO: Replace with actual user ID from context
+					userId: ctx.userId,
 					...input,
 				})
 				.returning();
 			return account;
 		}),
 
-	update: publicProcedure
+	update: protectedProcedure
 		.input(
 			z.object({
 				id: z.string(),
@@ -54,7 +56,7 @@ export const accountsRouter = {
 				isActive: z.boolean().optional(),
 			}),
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			const { id, ...data } = input;
 			const [account] = await db
 				.update(accounts)
@@ -62,23 +64,25 @@ export const accountsRouter = {
 					...data,
 					updatedAt: new Date().toISOString(),
 				})
-				.where(eq(accounts.id, id))
+				.where(and(eq(accounts.id, id), eq(accounts.userId, ctx.userId)))
 				.returning();
 			return account;
 		}),
 
-	delete: publicProcedure
+	delete: protectedProcedure
 		.input(z.object({ id: z.string() }))
-		.mutation(async ({ input }) => {
-			await db.delete(accounts).where(eq(accounts.id, input.id));
+		.mutation(async ({ input, ctx }) => {
+			await db
+				.delete(accounts)
+				.where(and(eq(accounts.id, input.id), eq(accounts.userId, ctx.userId)));
 			return { success: true };
 		}),
 
-	getTotalBalance: publicProcedure.query(async () => {
+	getTotalBalance: protectedProcedure.query(async ({ ctx }) => {
 		const allAccounts = await db
 			.select()
 			.from(accounts)
-			.where(eq(accounts.isActive, true));
+			.where(and(eq(accounts.isActive, true), eq(accounts.userId, ctx.userId)));
 
 		const total = allAccounts.reduce((sum, account) => {
 			return sum + Number.parseFloat(account.balance);

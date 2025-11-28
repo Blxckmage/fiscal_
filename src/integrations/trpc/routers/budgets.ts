@@ -1,26 +1,30 @@
 import { z } from "zod";
 import { eq, and, gte, lte } from "drizzle-orm";
 import type { TRPCRouterRecord } from "@trpc/server";
+import { TRPCError } from "@trpc/server";
 import { db } from "@/db";
 import { budgets, transactions } from "@/db/schema";
-import { publicProcedure } from "../init";
+import { protectedProcedure } from "../init";
 
 export const budgetsRouter = {
-	getAll: publicProcedure.query(async () => {
-		return await db.select().from(budgets).where(eq(budgets.isActive, true));
+	getAll: protectedProcedure.query(async ({ ctx }) => {
+		return await db
+			.select()
+			.from(budgets)
+			.where(and(eq(budgets.isActive, true), eq(budgets.userId, ctx.userId)));
 	}),
 
-	getById: publicProcedure
+	getById: protectedProcedure
 		.input(z.object({ id: z.string() }))
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const [budget] = await db
 				.select()
 				.from(budgets)
-				.where(eq(budgets.id, input.id));
+				.where(and(eq(budgets.id, input.id), eq(budgets.userId, ctx.userId)));
 			return budget;
 		}),
 
-	create: publicProcedure
+	create: protectedProcedure
 		.input(
 			z.object({
 				categoryId: z.string(),
@@ -30,18 +34,18 @@ export const budgetsRouter = {
 				endDate: z.string(),
 			}),
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			const [budget] = await db
 				.insert(budgets)
 				.values({
-					userId: "temp-user-id", // TODO: Replace with actual user ID
+					userId: ctx.userId,
 					...input,
 				})
 				.returning();
 			return budget;
 		}),
 
-	update: publicProcedure
+	update: protectedProcedure
 		.input(
 			z.object({
 				id: z.string(),
@@ -52,7 +56,7 @@ export const budgetsRouter = {
 				isActive: z.boolean().optional(),
 			}),
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			const { id, ...data } = input;
 			const [budget] = await db
 				.update(budgets)
@@ -60,28 +64,35 @@ export const budgetsRouter = {
 					...data,
 					updatedAt: new Date().toISOString(),
 				})
-				.where(eq(budgets.id, id))
+				.where(and(eq(budgets.id, id), eq(budgets.userId, ctx.userId)))
 				.returning();
 			return budget;
 		}),
 
-	delete: publicProcedure
+	delete: protectedProcedure
 		.input(z.object({ id: z.string() }))
-		.mutation(async ({ input }) => {
-			await db.delete(budgets).where(eq(budgets.id, input.id));
+		.mutation(async ({ input, ctx }) => {
+			await db
+				.delete(budgets)
+				.where(and(eq(budgets.id, input.id), eq(budgets.userId, ctx.userId)));
 			return { success: true };
 		}),
 
-	getProgress: publicProcedure
+	getProgress: protectedProcedure
 		.input(z.object({ budgetId: z.string() }))
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const [budget] = await db
 				.select()
 				.from(budgets)
-				.where(eq(budgets.id, input.budgetId));
+				.where(
+					and(eq(budgets.id, input.budgetId), eq(budgets.userId, ctx.userId)),
+				);
 
 			if (!budget) {
-				throw new Error("Budget not found");
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Budget not found",
+				});
 			}
 
 			// Calculate spent amount
@@ -90,6 +101,7 @@ export const budgetsRouter = {
 				.from(transactions)
 				.where(
 					and(
+						eq(transactions.userId, ctx.userId),
 						eq(transactions.categoryId, budget.categoryId),
 						eq(transactions.type, "expense"),
 						gte(transactions.date, budget.startDate),

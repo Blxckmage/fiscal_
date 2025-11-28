@@ -1,35 +1,40 @@
 import { z } from "zod";
-import { eq, or } from "drizzle-orm";
+import { eq, or, and } from "drizzle-orm";
 import type { TRPCRouterRecord } from "@trpc/server";
+import { TRPCError } from "@trpc/server";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
-import { publicProcedure } from "../init";
+import { protectedProcedure } from "../init";
 
 export const categoriesRouter = {
-	getAll: publicProcedure.query(async () => {
+	getAll: protectedProcedure.query(async ({ ctx }) => {
 		// Get all system categories and user's custom categories
 		return await db
 			.select()
 			.from(categories)
 			.where(
-				or(
-					eq(categories.isSystem, true),
-					// TODO: Add user-specific filter when auth is implemented
-					// eq(categories.userId, ctx.userId)
-				),
+				or(eq(categories.isSystem, true), eq(categories.userId, ctx.userId)),
 			);
 	}),
 
-	getByType: publicProcedure
+	getByType: protectedProcedure
 		.input(z.object({ type: z.enum(["income", "expense"]) }))
-		.query(async ({ input }) => {
-			return await db.select().from(categories).where(
-				eq(categories.type, input.type),
-				// TODO: Add user filter
-			);
+		.query(async ({ input, ctx }) => {
+			return await db
+				.select()
+				.from(categories)
+				.where(
+					and(
+						eq(categories.type, input.type),
+						or(
+							eq(categories.isSystem, true),
+							eq(categories.userId, ctx.userId),
+						),
+					),
+				);
 		}),
 
-	create: publicProcedure
+	create: protectedProcedure
 		.input(
 			z.object({
 				name: z.string(),
@@ -38,12 +43,11 @@ export const categoriesRouter = {
 				color: z.string().optional(),
 			}),
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			const [category] = await db
 				.insert(categories)
 				.values({
-					// userId will be added when auth is implemented
-					userId: "temp-user-id", // TODO: Replace with actual user ID
+					userId: ctx.userId,
 					...input,
 					isSystem: false,
 				})
@@ -51,7 +55,7 @@ export const categoriesRouter = {
 			return category;
 		}),
 
-	update: publicProcedure
+	update: protectedProcedure
 		.input(
 			z.object({
 				id: z.string(),
@@ -60,41 +64,53 @@ export const categoriesRouter = {
 				color: z.string().optional(),
 			}),
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			const { id, ...data } = input;
 
 			// Check if it's a system category (cannot be edited)
 			const [existing] = await db
 				.select()
 				.from(categories)
-				.where(eq(categories.id, id));
+				.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)));
 
 			if (!existing || existing.isSystem) {
-				throw new Error("Cannot update system categories");
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Cannot update system categories",
+				});
 			}
 
 			const [category] = await db
 				.update(categories)
 				.set(data)
-				.where(eq(categories.id, id))
+				.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)))
 				.returning();
 			return category;
 		}),
 
-	delete: publicProcedure
+	delete: protectedProcedure
 		.input(z.object({ id: z.string() }))
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			// Check if it's a system category (cannot be deleted)
 			const [existing] = await db
 				.select()
 				.from(categories)
-				.where(eq(categories.id, input.id));
+				.where(
+					and(eq(categories.id, input.id), eq(categories.userId, ctx.userId)),
+				);
 
 			if (!existing || existing.isSystem) {
-				throw new Error("Cannot delete system categories");
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Cannot delete system categories",
+				});
 			}
 
-			await db.delete(categories).where(eq(categories.id, input.id));
+			await db
+				.delete(categories)
+				.where(
+					and(eq(categories.id, input.id), eq(categories.userId, ctx.userId)),
+				);
 			return { success: true };
 		}),
 } satisfies TRPCRouterRecord;
