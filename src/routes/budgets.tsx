@@ -29,13 +29,24 @@ function BudgetsPage() {
 		trpc.categories.getAll.queryOptions(),
 	);
 
-	const createMutation = useMutation(trpc.budgets.create.mutationOptions());
-	const updateMutation = useMutation(trpc.budgets.update.mutationOptions());
-	const deleteMutation = useMutation(trpc.budgets.delete.mutationOptions());
-
-	const refetch = () => {
-		queryClient.invalidateQueries({ queryKey: ["budgets", "getAll"] });
-	};
+	const createMutation = useMutation({
+		...trpc.budgets.create.mutationOptions(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["budgets"] });
+		},
+	});
+	const updateMutation = useMutation({
+		...trpc.budgets.update.mutationOptions(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["budgets"] });
+		},
+	});
+	const deleteMutation = useMutation({
+		...trpc.budgets.delete.mutationOptions(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["budgets"] });
+		},
+	});
 
 	const editingBudget = budgets.find((b: any) => b.id === editingId);
 
@@ -54,7 +65,6 @@ function BudgetsPage() {
 			try {
 				await createMutation.mutateAsync(value);
 				toast.success("Budget created successfully!");
-				await refetch();
 				setIsCreateOpen(false);
 				createForm.reset();
 			} catch (error) {
@@ -80,7 +90,6 @@ function BudgetsPage() {
 					...value,
 				});
 				toast.success("Budget updated successfully!");
-				await refetch();
 				resetEditForm();
 			} catch (error) {
 				toast.error("Failed to update budget");
@@ -110,7 +119,6 @@ function BudgetsPage() {
 		try {
 			await deleteMutation.mutateAsync({ id });
 			toast.success("Budget deleted successfully!");
-			await refetch();
 			setDeleteConfirm(null);
 		} catch (error) {
 			toast.error("Failed to delete budget");

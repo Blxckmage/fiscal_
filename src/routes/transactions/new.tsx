@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useForm } from "@tanstack/react-form";
 import { useTRPC } from "@/integrations/trpc/react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -18,14 +18,19 @@ export const Route = createFileRoute("/transactions/new")({
 function NewTransactionPage() {
 	const navigate = useNavigate();
 	const trpc = useTRPC();
+	const queryClient = useQueryClient();
 
 	const { data: accounts = [] } = useQuery(trpc.accounts.getAll.queryOptions());
 	const { data: categories = [] } = useQuery(
 		trpc.categories.getAll.queryOptions(),
 	);
-	const createMutation = useMutation(
-		trpc.transactions.create.mutationOptions(),
-	);
+	const createMutation = useMutation({
+		...trpc.transactions.create.mutationOptions(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["transactions"] });
+			queryClient.invalidateQueries({ queryKey: ["accounts"] });
+		},
+	});
 
 	// Get today's date in YYYY-MM-DD format
 	const today = new Date().toISOString().split("T")[0];

@@ -44,17 +44,20 @@ function TransactionsPage() {
 		trpc.categories.getAll.queryOptions(),
 	);
 
-	const updateMutation = useMutation(
-		trpc.transactions.update.mutationOptions(),
-	);
-	const deleteMutation = useMutation(
-		trpc.transactions.delete.mutationOptions(),
-	);
-
-	const refetch = () => {
-		queryClient.invalidateQueries({ queryKey: ["transactions", "getAll"] });
-		queryClient.invalidateQueries({ queryKey: ["accounts", "getAll"] });
-	};
+	const updateMutation = useMutation({
+		...trpc.transactions.update.mutationOptions(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["transactions"] });
+			queryClient.invalidateQueries({ queryKey: ["accounts"] });
+		},
+	});
+	const deleteMutation = useMutation({
+		...trpc.transactions.delete.mutationOptions(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["transactions"] });
+			queryClient.invalidateQueries({ queryKey: ["accounts"] });
+		},
+	});
 
 	const editingTransaction = transactions.find((t: any) => t.id === editingId);
 
@@ -80,7 +83,6 @@ function TransactionsPage() {
 					notes: value.notes || undefined,
 				});
 				toast.success("Transaction updated successfully!");
-				await refetch();
 				resetForm();
 			} catch (error) {
 				toast.error("Failed to update transaction");
@@ -110,7 +112,6 @@ function TransactionsPage() {
 		try {
 			await deleteMutation.mutateAsync({ id });
 			toast.success("Transaction deleted successfully!");
-			await refetch();
 			setDeleteConfirm(null);
 		} catch (error) {
 			toast.error("Failed to delete transaction");

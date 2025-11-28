@@ -33,13 +33,24 @@ function AccountsPage() {
 	const queryClient = useQueryClient();
 
 	const { data: accounts = [] } = useQuery(trpc.accounts.getAll.queryOptions());
-	const createMutation = useMutation(trpc.accounts.create.mutationOptions());
-	const updateMutation = useMutation(trpc.accounts.update.mutationOptions());
-	const deleteMutation = useMutation(trpc.accounts.delete.mutationOptions());
-
-	const refetch = () => {
-		queryClient.invalidateQueries({ queryKey: ["accounts", "getAll"] });
-	};
+	const createMutation = useMutation({
+		...trpc.accounts.create.mutationOptions(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["accounts"] });
+		},
+	});
+	const updateMutation = useMutation({
+		...trpc.accounts.update.mutationOptions(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["accounts"] });
+		},
+	});
+	const deleteMutation = useMutation({
+		...trpc.accounts.delete.mutationOptions(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["accounts"] });
+		},
+	});
 
 	const editingAccount = accounts.find((a: any) => a.id === editingId);
 
@@ -67,7 +78,6 @@ function AccountsPage() {
 					await createMutation.mutateAsync(value);
 					toast.success("Account created successfully!");
 				}
-				await refetch();
 				resetForm();
 			} catch (error) {
 				toast.error("Failed to save account");
@@ -97,7 +107,6 @@ function AccountsPage() {
 		try {
 			await deleteMutation.mutateAsync({ id });
 			toast.success("Account deleted successfully!");
-			await refetch();
 			setDeleteConfirm(null);
 		} catch (error) {
 			toast.error("Failed to delete account");
