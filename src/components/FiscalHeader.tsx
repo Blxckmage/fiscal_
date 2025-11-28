@@ -44,17 +44,12 @@ export default function FiscalHeader() {
 					>
 						Transactions
 					</Link>
-					<Link
-						to="/transactions/new"
-						className="font-bold uppercase hover:underline"
-						activeProps={{ className: "font-bold uppercase underline" }}
-					>
-						Add Transaction
-					</Link>
 
 					<div className="flex items-center gap-4 ml-4 pl-4 border-l-2 border-black dark:border-white">
 						<ThemeToggle />
-						<span className="text-sm uppercase">{session.user?.email}</span>
+						<Link to="/profile" className="text-sm uppercase hover:underline">
+							{session.user?.email}
+						</Link>
 						<Button
 							onClick={handleSignOut}
 							variant="outline"
