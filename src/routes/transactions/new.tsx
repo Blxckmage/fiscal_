@@ -27,8 +27,8 @@ function NewTransactionPage() {
 	const createMutation = useMutation({
 		...trpc.transactions.create.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["transactions"] });
-			queryClient.invalidateQueries({ queryKey: ["accounts"] });
+			queryClient.invalidateQueries({ queryKey: [["transactions"]] });
+			queryClient.invalidateQueries({ queryKey: [["accounts"]] });
 		},
 	});
 
@@ -107,7 +107,7 @@ function NewTransactionPage() {
 			>
 				{/* Transaction Type */}
 				<form.Field name="type">
-					{(field) => (
+					{() => (
 						<div>
 							<label className="block text-sm font-bold uppercase mb-2">
 								Transaction Type *

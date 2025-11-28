@@ -36,19 +36,19 @@ function AccountsPage() {
 	const createMutation = useMutation({
 		...trpc.accounts.create.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["accounts"] });
+			queryClient.invalidateQueries({ queryKey: [["accounts"]] });
 		},
 	});
 	const updateMutation = useMutation({
 		...trpc.accounts.update.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["accounts"] });
+			queryClient.invalidateQueries({ queryKey: [["accounts"]] });
 		},
 	});
 	const deleteMutation = useMutation({
 		...trpc.accounts.delete.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["accounts"] });
+			queryClient.invalidateQueries({ queryKey: [["accounts"]] });
 		},
 	});
 

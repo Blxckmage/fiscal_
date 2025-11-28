@@ -32,19 +32,19 @@ function BudgetsPage() {
 	const createMutation = useMutation({
 		...trpc.budgets.create.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["budgets"] });
+			queryClient.invalidateQueries({ queryKey: [["budgets"]] });
 		},
 	});
 	const updateMutation = useMutation({
 		...trpc.budgets.update.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["budgets"] });
+			queryClient.invalidateQueries({ queryKey: [["budgets"]] });
 		},
 	});
 	const deleteMutation = useMutation({
 		...trpc.budgets.delete.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["budgets"] });
+			queryClient.invalidateQueries({ queryKey: [["budgets"]] });
 		},
 	});
 

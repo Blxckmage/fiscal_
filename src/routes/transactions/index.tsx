@@ -47,15 +47,15 @@ function TransactionsPage() {
 	const updateMutation = useMutation({
 		...trpc.transactions.update.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["transactions"] });
-			queryClient.invalidateQueries({ queryKey: ["accounts"] });
+			queryClient.invalidateQueries({ queryKey: [["transactions"]] });
+			queryClient.invalidateQueries({ queryKey: [["accounts"]] });
 		},
 	});
 	const deleteMutation = useMutation({
 		...trpc.transactions.delete.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["transactions"] });
-			queryClient.invalidateQueries({ queryKey: ["accounts"] });
+			queryClient.invalidateQueries({ queryKey: [["transactions"]] });
+			queryClient.invalidateQueries({ queryKey: [["accounts"]] });
 		},
 	});
 
