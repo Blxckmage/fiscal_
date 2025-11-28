@@ -1,4 +1,4 @@
-# Fiscal - Personal Finance Manager
+# fiscal_ - Personal Finance Manager
 
 A brutalist-styled personal finance management application built with TanStack Start, tRPC, Drizzle ORM, and Better Auth.
 

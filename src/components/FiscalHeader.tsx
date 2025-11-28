@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function FiscalHeader() {
 	const { data: session } = useSession();
@@ -15,10 +16,10 @@ export default function FiscalHeader() {
 	}
 
 	return (
-		<header className="border-b-4 border-black bg-white p-4">
+		<header className="border-b-4 border-black dark:border-white bg-white dark:bg-black p-4">
 			<div className="container mx-auto flex items-center justify-between">
 				<Link to="/" className="text-2xl font-bold uppercase hover:underline">
-					FISCAL
+					fiscal_
 				</Link>
 
 				<nav className="flex items-center gap-6">
@@ -30,12 +31,13 @@ export default function FiscalHeader() {
 						Dashboard
 					</Link>
 
-					<div className="flex items-center gap-4 ml-4 pl-4 border-l-2 border-black">
+					<div className="flex items-center gap-4 ml-4 pl-4 border-l-2 border-black dark:border-white">
+						<ThemeToggle />
 						<span className="text-sm uppercase">{session.user?.email}</span>
 						<Button
 							onClick={handleSignOut}
 							variant="outline"
-							className="border-2 border-black uppercase font-bold"
+							className="border-2 border-black dark:border-white uppercase font-bold"
 						>
 							Logout
 						</Button>

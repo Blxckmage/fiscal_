@@ -6,9 +6,11 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
+import { Toaster } from "@/components/ui/sonner";
 
 import Header from "../components/Header";
 import FiscalHeader from "../components/FiscalHeader";
+import { ThemeProvider } from "../components/ThemeProvider";
 
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 
@@ -36,7 +38,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "Fiscal - Personal Finance Manager",
+				title: "fiscal_ - Personal Finance Manager",
 			},
 		],
 		links: [
@@ -56,26 +58,29 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	const isLoginRoute = location.pathname === "/login";
 
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<head>
 				<HeadContent />
 			</head>
-			<body>
-				{isDemoRoute && <Header />}
-				{!isDemoRoute && !isLoginRoute && <FiscalHeader />}
-				{children}
-				<TanStackDevtools
-					config={{
-						position: "bottom-right",
-					}}
-					plugins={[
-						{
-							name: "Tanstack Router",
-							render: <TanStackRouterDevtoolsPanel />,
-						},
-						TanStackQueryDevtools,
-					]}
-				/>
+			<body className="min-h-screen">
+				<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+					{isDemoRoute && <Header />}
+					{!isDemoRoute && !isLoginRoute && <FiscalHeader />}
+					<div className="min-h-screen">{children}</div>
+					<Toaster />
+					<TanStackDevtools
+						config={{
+							position: "bottom-right",
+						}}
+						plugins={[
+							{
+								name: "Tanstack Router",
+								render: <TanStackRouterDevtoolsPanel />,
+							},
+							TanStackQueryDevtools,
+						]}
+					/>
+				</ThemeProvider>
 				<Scripts />
 			</body>
 		</html>

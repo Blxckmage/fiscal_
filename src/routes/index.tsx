@@ -25,7 +25,7 @@ function DashboardContent() {
 	);
 
 	return (
-		<div className="min-h-screen p-8">
+		<div className="min-h-screen p-8 bg-white dark:bg-black">
 			<div className="container mx-auto">
 				<div className="mb-8">
 					<h1 className="text-4xl font-bold uppercase mb-2">Dashboard</h1>
@@ -36,7 +36,7 @@ function DashboardContent() {
 
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 					{/* Total Balance Card */}
-					<div className="border-4 border-black bg-white p-6">
+					<div className="border-4 border-black dark:border-white bg-white dark:bg-black p-6">
 						<h2 className="text-sm font-bold uppercase mb-2 text-muted-foreground">
 							Total Balance
 						</h2>
@@ -51,14 +51,14 @@ function DashboardContent() {
 					</div>
 
 					{/* Placeholder cards */}
-					<div className="border-4 border-black bg-white p-6">
+					<div className="border-4 border-black dark:border-white bg-white dark:bg-black p-6">
 						<h2 className="text-sm font-bold uppercase mb-2 text-muted-foreground">
 							This Month
 						</h2>
 						<p className="text-3xl font-bold">Coming Soon</p>
 					</div>
 
-					<div className="border-4 border-black bg-white p-6">
+					<div className="border-4 border-black dark:border-white bg-white dark:bg-black p-6">
 						<h2 className="text-sm font-bold uppercase mb-2 text-muted-foreground">
 							Budgets
 						</h2>
@@ -67,7 +67,7 @@ function DashboardContent() {
 				</div>
 
 				{/* Recent Transactions */}
-				<div className="border-4 border-black bg-white p-6">
+				<div className="border-4 border-black dark:border-white bg-white dark:bg-black p-6">
 					<h2 className="text-xl font-bold uppercase mb-4">
 						Recent Transactions
 					</h2>
@@ -78,7 +78,7 @@ function DashboardContent() {
 							{recentTransactions.map((transaction) => (
 								<div
 									key={transaction.id}
-									className="border-2 border-black p-4 flex justify-between items-center"
+									className="border-2 border-black dark:border-white p-4 flex justify-between items-center"
 								>
 									<div>
 										<p className="font-bold">
