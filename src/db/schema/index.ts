@@ -1,4 +1,7 @@
+// Better Auth tables
 export * from "./users";
+
+// Application tables
 export * from "./accounts";
 export * from "./categories";
 export * from "./transactions";
