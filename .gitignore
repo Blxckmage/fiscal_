@@ -5,6 +5,8 @@ dist-ssr
 *.local
 count.txt
 .env
+.env.local
+.env.*.local
 .nitro
 .tanstack
 .wrangler
@@ -12,6 +14,10 @@ count.txt
 .vinxi
 todos.json
 .ai
+
+# IDE
+.vscode
+.idea
 
 # Database
 data/

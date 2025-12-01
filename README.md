@@ -1,13 +1,15 @@
-# fiscal_ - Personal Finance Manager
+# fiscal\_ - Personal Finance Manager
 
-A brutalist-styled personal finance management application built with TanStack Start, tRPC, Drizzle ORM, and Better Auth.
+A modern personal finance management application built with TanStack Start, tRPC, Drizzle ORM, and Better Auth.
 
 ## Features
 
 - **Authentication**: Email/password authentication with Better Auth
 - **Protected Routes**: User-scoped data access with tRPC
 - **Dashboard**: Overview of accounts, transactions, and balances
-- **Brutalist Design**: Bold borders, uppercase text, Departure Mono font
+- **Account Management**: Track multiple financial accounts
+- **Budget Tracking**: Create and monitor budgets with progress indicators
+- **Savings Goals**: Set and track savings goals
 - **System Categories**: Pre-seeded income and expense categories
 
 ## Tech Stack
@@ -26,14 +28,33 @@ A brutalist-styled personal finance management application built with TanStack S
 pnpm install
 ```
 
+## Environment Setup
+
+1. Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+2. Update the `.env` file with your values:
+   - **FINNHUB_API_KEY**: Get your free API key at https://finnhub.io/register
+   - **BETTER_AUTH_SECRET**: Generate a secure random string (required for production):
+     ```bash
+     openssl rand -base64 32
+     ```
+   - **SERVER_URL**: Your server URL (default: http://localhost:3000)
+   - **VITE_APP_TITLE**: Your app title (optional)
+
 ## Database Setup
 
 1. Initialize the database:
+
 ```bash
 pnpm db:push
 ```
 
 2. Seed system categories:
+
 ```bash
 pnpm db:seed
 ```
@@ -69,11 +90,113 @@ pnpm build
 
 ## Testing
 
-This project uses [Vitest](https://vitest.dev/) for testing.
+This project uses [Vitest](https://vitest.dev/) for testing with React Testing Library.
+
+### Run Tests
 
 ```bash
+# Run all tests once
 pnpm test
+
+# Run tests in watch mode (auto-reruns on file changes)
+pnpm test:watch
+
+# Run tests with interactive UI
+pnpm test:ui
+
+# Generate coverage report
+pnpm test:coverage
 ```
+
+### Test Structure
+
+```
+src/
+├── components/
+│   └── ui/
+│       ├── button.tsx
+│       └── button.test.tsx        # Component tests
+├── db/
+│   └── schema/
+│       ├── categories.ts
+│       └── categories.test.ts     # Schema type tests
+├── lib/
+│   ├── utils.ts
+│   └── utils.test.ts              # Utility function tests
+└── test/
+    ├── setup.ts                   # Test configuration
+    └── business-logic.test.ts     # Business logic tests
+```
+
+### Writing Tests
+
+#### Unit Tests (Utilities)
+
+```ts
+import { describe, it, expect } from "vitest";
+import { formatCurrency } from "./utils";
+
+describe("formatCurrency", () => {
+  it("should format IDR currency correctly", () => {
+    expect(formatCurrency(1000000)).toBe("Rp 1.000.000");
+  });
+
+  it("should handle negative values", () => {
+    expect(formatCurrency(-500000)).toBe("-Rp 500.000");
+  });
+});
+```
+
+#### Component Tests
+
+```ts
+import { describe, it, expect } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { Button } from './button'
+
+describe('Button', () => {
+  it('should render with text', () => {
+    render(<Button>Click me</Button>)
+    expect(screen.getByRole('button', { name: /click me/i })).toBeDefined()
+  })
+
+  it('should handle click events', () => {
+    let clicked = false
+    render(<Button onClick={() => { clicked = true }}>Click</Button>)
+    screen.getByRole('button').click()
+    expect(clicked).toBe(true)
+  })
+})
+```
+
+#### Business Logic Tests
+
+```ts
+import { describe, it, expect } from "vitest";
+
+describe("Transaction validation", () => {
+  it("should reject zero amount", () => {
+    const isValid = validateAmount(0);
+    expect(isValid).toBe(false);
+  });
+
+  it("should accept positive amount", () => {
+    const isValid = validateAmount(100);
+    expect(isValid).toBe(true);
+  });
+});
+```
+
+### Test Coverage
+
+Run `pnpm test:coverage` to generate a coverage report. The report will be available in the `coverage/` directory.
+
+Current test files:
+
+- `src/lib/utils.test.ts` - Utility function tests
+- `src/components/ui/button.test.tsx` - Button component tests
+- `src/db/schema/categories.test.ts` - Category schema validation
+- `src/test/business-logic.test.ts` - Business logic validation
 
 ## Linting & Formatting
 
@@ -90,7 +213,8 @@ pnpm check
 ```
 src/
 ├── components/          # React components
-│   ├── FiscalHeader.tsx   # App header with logout
+│   ├── ui/              # Reusable UI components (shadcn)
+│   ├── FiscalHeader.tsx # App header with logout
 │   └── ProtectedRoute.tsx # Auth wrapper
 ├── db/
 │   ├── schema/          # Drizzle schema definitions
@@ -104,14 +228,18 @@ src/
 ├── lib/
 │   ├── auth.ts          # Better Auth config
 │   └── auth-client.ts   # Auth client utilities
-└── routes/              # File-based routing
-    ├── __root.tsx         # Root layout
-    ├── index.tsx          # Dashboard
-    ├── login.tsx          # Login/signup page
-    └── demo/              # Demo routes (can be deleted)
+├── routes/              # File-based routing
+│   ├── __root.tsx         # Root layout
+│   ├── index.tsx          # Dashboard
+│   ├── login.tsx          # Login/signup page
+│   ├── accounts.tsx       # Accounts page
+│   ├── budgets.tsx        # Budgets page
+│   ├── goals.tsx          # Savings goals page
+│   └── transactions/      # Transaction routes
+└── test/                # Test setup and utilities
 ```
 
-# Learn More
+## Learn More
 
 - [TanStack Start](https://tanstack.com/start)
 - [TanStack Router](https://tanstack.com/router)
@@ -119,289 +247,4 @@ src/
 - [tRPC](https://trpc.io)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [Better Auth](https://www.better-auth.com)
-
-
-## Shadcn
-
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
-
-```bash
-pnpx shadcn@latest add button
-```
-
-
-## T3Env
-
-- You can use T3Env to add type safety to your environment variables.
-- Add Environment variables to the `src/env.mjs` file.
-- Use the environment variables in your code.
-
-### Usage
-
-```ts
-import { env } from "@/env";
-
-console.log(env.VITE_APP_TITLE);
-```
-
-
-
-
-
-
-## Routing
-This project uses [TanStack Router](https://tanstack.com/router). The initial setup is a file based router. Which means that the routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add another a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you use the `<Outlet />` component.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-
-import { Link } from "@tanstack/react-router";
-
-export const Route = createRootRoute({
-  component: () => (
-    <>
-      <header>
-        <nav>
-          <Link to="/">Home</Link>
-          <Link to="/about">About</Link>
-        </nav>
-      </header>
-      <Outlet />
-      <TanStackRouterDevtools />
-    </>
-  ),
-})
-```
-
-The `<TanStackRouterDevtools />` component is not required so you can remove it if you don't want it in your layout.
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-const peopleRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/people",
-  loader: async () => {
-    const response = await fetch("https://swapi.dev/api/people");
-    return response.json() as Promise<{
-      results: {
-        name: string;
-      }[];
-    }>;
-  },
-  component: () => {
-    const data = peopleRoute.useLoaderData();
-    return (
-      <ul>
-        {data.results.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    );
-  },
-});
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-### React-Query
-
-React-Query is an excellent addition or alternative to route loading and integrating it into you application is a breeze.
-
-First add your dependencies:
-
-```bash
-pnpm add @tanstack/react-query @tanstack/react-query-devtools
-```
-
-Next we'll need to create a query client and provider. We recommend putting those in `main.tsx`.
-
-```tsx
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-// ...
-
-const queryClient = new QueryClient();
-
-// ...
-
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-
-  root.render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  );
-}
-```
-
-You can also add TanStack Query Devtools to the root route (optional).
-
-```tsx
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
-const rootRoute = createRootRoute({
-  component: () => (
-    <>
-      <Outlet />
-      <ReactQueryDevtools buttonPosition="top-right" />
-      <TanStackRouterDevtools />
-    </>
-  ),
-});
-```
-
-Now you can use `useQuery` to fetch your data.
-
-```tsx
-import { useQuery } from "@tanstack/react-query";
-
-import "./App.css";
-
-function App() {
-  const { data } = useQuery({
-    queryKey: ["people"],
-    queryFn: () =>
-      fetch("https://swapi.dev/api/people")
-        .then((res) => res.json())
-        .then((data) => data.results as { name: string }[]),
-    initialData: [],
-  });
-
-  return (
-    <div>
-      <ul>
-        {data.map((person) => (
-          <li key={person.name}>{person.name}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-export default App;
-```
-
-You can find out everything you need to know on how to use React-Query in the [React-Query documentation](https://tanstack.com/query/latest/docs/framework/react/overview).
-
-## State Management
-
-Another common requirement for React applications is state management. There are many options for state management in React. TanStack Store provides a great starting point for your project.
-
-First you need to add TanStack Store as a dependency:
-
-```bash
-pnpm add @tanstack/store
-```
-
-Now let's create a simple counter in the `src/App.tsx` file as a demonstration.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-function App() {
-  const count = useStore(countStore);
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-    </div>
-  );
-}
-
-export default App;
-```
-
-One of the many nice features of TanStack Store is the ability to derive state from other state. That derived state will update when the base state updates.
-
-Let's check this out by doubling the count using derived state.
-
-```tsx
-import { useStore } from "@tanstack/react-store";
-import { Store, Derived } from "@tanstack/store";
-import "./App.css";
-
-const countStore = new Store(0);
-
-const doubledStore = new Derived({
-  fn: () => countStore.state * 2,
-  deps: [countStore],
-});
-doubledStore.mount();
-
-function App() {
-  const count = useStore(countStore);
-  const doubledCount = useStore(doubledStore);
-
-  return (
-    <div>
-      <button onClick={() => countStore.setState((n) => n + 1)}>
-        Increment - {count}
-      </button>
-      <div>Doubled - {doubledCount}</div>
-    </div>
-  );
-}
-
-export default App;
-```
-
-We use the `Derived` class to create a new store that is derived from another store. The `Derived` class has a `mount` method that will start the derived store updating.
-
-Once we've created the derived store we can use it in the `App` component just like we would any other store using the `useStore` hook.
-
-You can find out everything you need to know on how to use TanStack Store in the [TanStack Store documentation](https://tanstack.com/store/latest).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
+- [Vitest](https://vitest.dev)
